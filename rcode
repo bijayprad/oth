@@ -1,0 +1,29 @@
+library("seminr")
+#read data
+buddhi=read.csv("https://raw.githubusercontent.com/bijayprad/oth/main/Buddhimansir.csv")
+#create measurement model
+simple_mm<-constructs(composite("Effectiveness", multi_items("eff",1:5)), composite("Policy", multi_items("pol",1:13)), composite("Process", multi_items("pro",1:7)))
+#create structural model
+simple_sm<-relationships(paths(from = c("Policy","Process"), to ="Effectiveness"))
+# Estimate 
+simple_model<-estimate_pls(data=buddhi, measurement_model = simple_mm, structural_model = simple_sm)
+summary_simple=summary(simple_model)
+summary_simple
+summary_simple$loadings
+plot(simple_model)
+summary_simple$reliability$alpha
+summary_simple$paths
+summary_simple$validity
+summary_simple$reliability
+#bootstraping
+boot_simple<-bootstrap_model(seminr_model = simple_model, nboot=10000, cores=NULL, seed=123)
+summary_boot<-summary(boot_simple)
+summary_boot$bootstrapped_HTMT
+plot(simple_model)
+plot(boot_simple)
+summary_simple$validity$fl_criteria
+boot_simple$outer_loadings
+summary(boot_simple)
+summary(simple_model)
+summary(buddhi$pol1)
+table(buddhi$pol1)
