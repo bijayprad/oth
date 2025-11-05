@@ -1,1 +1,112 @@
 # This is the code for data analysis of this data
+#############################################
+# PANEL DATA ANALYSIS IN R
+# Dataset: Firm-level financial & macroeconomic data (2015–2017)
+# Dependent Variable: ROA
+# Independent Variables: Debt_to_Equity, Debt_to_Assets, Liquidity,
+# Firm_Size_LnAssets, GDP_Growth, Inflation, Interest_Rate, Exchange_Rate
+#############################################
+
+# ---- 1. Load Required Libraries ----
+install.packages(c("plm", "dplyr", "ggplot2", "corrplot", "lmtest", "psych", "car"))
+library(plm)
+library(dplyr)
+library(ggplot2)
+library(corrplot)
+library(lmtest)
+library(psych)
+library(car)
+
+# ---- 2. Import Data ----
+# Make sure your CSV file has headers as shown in your sample
+# Example: "Firm,Year,Sector,GDP_Growth,Inflation,Interest_Rate,Exchange_Rate,ROA,Debt_to_Equity,Debt_to_Assets,Liquidity,Firm_Size_LnAssets"
+data <- read.csv("your_dataset.csv", header = TRUE)
+
+# ---- 3. Quick Data Overview ----
+head(data)
+summary(data)
+str(data)
+
+# ---- 4. Descriptive Statistics ----
+describe(data[, c("ROA", "Debt_to_Equity", "Debt_to_Assets", "Liquidity", 
+                  "Firm_Size_LnAssets", "GDP_Growth", "Inflation", 
+                  "Interest_Rate", "Exchange_Rate")])
+
+# ---- 5. Correlation Analysis ----
+cor_matrix <- cor(data[, c("ROA", "Debt_to_Equity", "Debt_to_Assets", "Liquidity", 
+                           "Firm_Size_LnAssets", "GDP_Growth", "Inflation", 
+                           "Interest_Rate", "Exchange_Rate")], use = "complete.obs")
+corrplot(cor_matrix, method = "number", type = "upper", tl.col = "black")
+
+# ---- 6. Panel Data Setup ----
+# Define firm and time indices
+pdata <- pdata.frame(data, index = c("Firm", "Year"))
+
+# ---- 7. Pooled OLS Model ----
+pooling_model <- plm(ROA ~ Debt_to_Equity + Debt_to_Assets + Liquidity + 
+                     Firm_Size_LnAssets + GDP_Growth + Inflation + 
+                     Interest_Rate + Exchange_Rate,
+                     data = pdata, model = "pooling")
+summary(pooling_model)
+
+# ---- 8. Fixed Effects Model (Within) ----
+fixed_model <- plm(ROA ~ Debt_to_Equity + Debt_to_Assets + Liquidity + 
+                   Firm_Size_LnAssets + GDP_Growth + Inflation + 
+                   Interest_Rate + Exchange_Rate,
+                   data = pdata, model = "within")
+summary(fixed_model)
+
+# ---- 9. Random Effects Model ----
+random_model <- plm(ROA ~ Debt_to_Equity + Debt_to_Assets + Liquidity + 
+                    Firm_Size_LnAssets + GDP_Growth + Inflation + 
+                    Interest_Rate + Exchange_Rate,
+                    data = pdata, model = "random")
+summary(random_model)
+
+# ---- 10. Hausman Test (to choose between FE and RE) ----
+hausman_test <- phtest(fixed_model, random_model)
+hausman_test
+
+# ---- 11. Diagnostic Tests ----
+# 11.1 Breusch-Pagan LM Test (Pooling vs RE)
+plmtest(pooling_model, type = "bp")
+
+# 11.2 Serial Correlation (Wooldridge Test)
+pbgtest(fixed_model)
+
+# 11.3 Heteroskedasticity Test
+bptest(fixed_model)
+
+# ---- 12. Sector-wise Fixed Effects (if relevant) ----
+sector_fe <- plm(ROA ~ Debt_to_Equity + Debt_to_Assets + Liquidity + 
+                 Firm_Size_LnAssets + GDP_Growth + Inflation + 
+                 Interest_Rate + Exchange_Rate + factor(Sector),
+                 data = pdata, model = "within")
+summary(sector_fe)
+
+# ---- 13. Visualization ----
+
+# 13.1 ROA Trend by Sector
+ggplot(data, aes(x = Year, y = ROA, color = Sector, group = Sector)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  theme_minimal() +
+  labs(title = "ROA Trend by Sector", y = "ROA (%)", x = "Year")
+
+# 13.2 Firm Size vs ROA
+ggplot(data, aes(x = Firm_Size_LnAssets, y = ROA, color = Sector)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal() +
+  labs(title = "Relationship between Firm Size and ROA")
+
+# ---- 14. Multicollinearity Check ----
+ols_model <- lm(ROA ~ Debt_to_Equity + Debt_to_Assets + Liquidity + 
+                Firm_Size_LnAssets + GDP_Growth + Inflation + 
+                Interest_Rate + Exchange_Rate, data = data)
+vif(ols_model)
+
+#############################################
+# END OF SCRIPT
+#############################################
+
