@@ -1,5 +1,6 @@
 Final Model 
 vijaya2<-read.delim("E:/others/vijaya/vijaya1.csv")
+vijaya2=read.csv("https://raw.githubusercontent.com/bijayprad/oth/refs/heads/main/Vijaya/vijaya.csv")
 # 1. Define measurement model (constructs and indicators)
 
 mm <- constructs(
