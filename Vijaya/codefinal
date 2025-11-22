@@ -1,0 +1,31 @@
+Final Model 
+vijaya2<-read.delim("E:/others/vijaya/vijaya1.csv")
+# 1. Define measurement model (constructs and indicators)
+
+mm <- constructs(
+  composite("FS",    multi_items("FS", 1:4)),          # FS1–FS4
+  composite("ARE",   multi_items("ARE", 1:4)),         # ARE1–ARE4 (drop ARE5)
+  composite("LGP",   multi_items("LGP", 1:4)),         # LGP1–LGP4
+  composite("CE",    multi_items("CE", 1:4)),          # CE1–CE4
+  composite("EREP",  multi_items("EREP", 1:4)),        # EREP1–EREP4 (drop EREP5)
+  composite("ERES",  multi_items("ERES", c(1,2,4)))    # ERES1, ERES2, ERES4 (drop ERES3)
+  # Note: higher_composite("ERE", ...) removed as requested
+)
+
+# 2. Define structural model (paths)
+sm <- relationships(
+  paths(from = "FS",  to = "ARE"),   # Funding sufficiency → Access
+  paths(from = "ARE", to = c("EREP","ERES")),  # Access → Effects on People & Society
+  paths(from = "LGP", to = c("EREP","ERES")),  # LGP direct effects
+  paths(from = "CE",  to = c("EREP","ERES"))   # CE direct effects
+)
+
+# 3. Estimate the PLS-SEM model
+pls_model <- estimate_pls(data = vijaya2,
+                          measurement_model = mm,
+                          structural_model = sm)
+
+# 4. Summarize results (paths, loadings, R²)
+summary(pls_model)
+# 5. Diagram
+plot(pls_model)
